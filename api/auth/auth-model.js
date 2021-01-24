@@ -19,7 +19,7 @@ function findUserById(id) {
 function findByUsername(username) {
     return db("users")
         .where("users.username", username)
-    .select("users.id", "users.username as User_Name")
+    .select("users.id", "users.username", "users.password")
 }
 
 module.exports = {
