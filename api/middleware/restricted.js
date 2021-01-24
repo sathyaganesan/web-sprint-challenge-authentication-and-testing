@@ -1,5 +1,15 @@
 module.exports = (req, res, next) => {
-  next();
+  try {
+    if (!req.session || !req.session.users) {
+      return res.status(401).json({
+        Message: "Token Invalid"
+      })
+    }
+    next();
+  } catch (err) {
+    next(err)
+  }
+
   /*
     IMPLEMENT
 
