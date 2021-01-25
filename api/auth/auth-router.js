@@ -94,7 +94,7 @@ router.post('/login', async (req, res, next) => {
     const token = jwt.sign({
       userId: user.id,
       username: user.username,
-    }, "secret code")
+    }, process.env.JWT_SECRET)
     res.json({
       Message: `Welcome, ${user.username}`,
       token: token
@@ -130,7 +130,7 @@ router.post('/login', async (req, res, next) => {
 
 router.get("/logout", async (req, res, next) => {
   try {
-    req.session.destroy((err) => {
+    req.token.destroy((err) => {
       if (err) {
         next(err);
       } else {
