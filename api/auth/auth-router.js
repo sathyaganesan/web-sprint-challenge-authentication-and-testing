@@ -19,12 +19,13 @@ router.post('/register', async (req, res, next) => {
     const { username, password } = req.body;
 
 // This condition is not responding as expected.
-    // const user = await Auth.findByUsername(username);
-    // if (user) {
-    //   res.status(409).json({
-    //     Message: "Username is already Exsist"
-    //   })
-    // }
+    const [user] = await Auth.findByUsername(username);
+    if (user) {
+      console.log("register",user);
+      res.status(409).json({
+        Message: "Username is already Exsist"
+      })
+    }
 
     if (password == null) {
       res.status(400).json({
@@ -89,13 +90,13 @@ router.post('/login', async (req, res, next) => {
       })
     }
 
-    // creating token:
+        // creating token:
     const token = jwt.sign({
       userId: user.id,
       username: user.username,
     }, "secret code")
     res.json({
-      Message: `Welcome ${user.username}`,
+      Message: `Welcome, ${user.username}`,
       token: token
     })
   } catch (err) {
