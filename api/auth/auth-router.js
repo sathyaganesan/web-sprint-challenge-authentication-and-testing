@@ -1,7 +1,48 @@
-const router = require('express').Router();
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const Auth = require("./auth-model");
+const restricted = require("../middleware/restricted");
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
+const router = express.Router();
+
+router.get("/users", restricted, async (req, res, next) => {
+  try {
+    res.json(await Auth.findUsers());
+  } catch (err) {
+    next(err);
+  }
+})
+
+router.post('/register', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+
+// This condition is not responding as expected.
+    const [user] = await Auth.findByUsername(username);
+    if (user) {
+      console.log("register",user);
+      res.status(409).json({
+        Message: "Username is already Exsist"
+      })
+    }
+
+    if (password == null) {
+      res.status(400).json({
+        Message: "Password is mandatory to register",
+      })
+    }
+
+    const newUser = await Auth.addUser({
+      username,
+      password: await bcrypt.hash(password, 10),
+    })
+    res.status(201).json(newUser);
+
+  } catch (err) {
+    next(err);
+  }
+  // res.end('implement register, please!');
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -28,8 +69,40 @@ router.post('/register', (req, res) => {
   */
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+router.post('/login', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+
+    // verifying username:
+    const [user] = await Auth.findByUsername(username)
+    console.log(user);
+    if (!user) {
+      return res.status(401).json({
+        Message: "User does not exsist"
+      })
+    }
+
+    // verifying password:
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({
+        Message: "Invalid password",
+      })
+    }
+
+        // creating token:
+    const token = jwt.sign({
+      userId: user.id,
+      username: user.username,
+    }, "secret code")
+    res.json({
+      Message: `Welcome, ${user.username}`,
+      token: token
+    })
+  } catch (err) {
+    next(err);
+  }
+  // res.end('implement login, please!');
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -54,5 +127,22 @@ router.post('/login', (req, res) => {
       the response body should include a string exactly as follows: "invalid credentials".
   */
 });
+
+router.get("/logout", async (req, res, next) => {
+  try {
+    req.session.destroy((err) => {
+      if (err) {
+        next(err);
+      } else {
+        res.status(204).end();
+        // res.json({
+        //   Message: "You are successfully logout"
+        // })
+      }
+    })
+  } catch (err) {
+    next(err);
+  }
+})
 
 module.exports = router;
